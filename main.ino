@@ -72,8 +72,6 @@ void loop() {
   Input = gyro.getAngleY();
   Setpoint = 0;
   pid(Input,Output,Setpoint,Kp,Ki,Kd);
-  Serial.print("rightSignal ");Serial.println(gyro.getAngleY());
-  Serial.print("currentrightSignal ");Serial.print(SignalLeft);
 
   rightProp.write(SignalRight);
   leftProp.write(SignalLeft);
