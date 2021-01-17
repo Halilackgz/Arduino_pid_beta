@@ -6,11 +6,12 @@
 MPU6050 gyro(Wire);
 Servo rightProp;
 Servo leftProp;
-double Input;
+
+float Input;
 double Output;
-double Setpoint;
-double Kp=2,Ki=0.01,Kd=8;
-double currentSignalRight=1100,currentSignalLeft=1000;
+float Setpoint;
+double Kp=2,Ki=0.005,Kd=1.8;
+double currentSignalRight=1000,currentSignalLeft=1000;
 double error;
 double lasterror;
 double totalerror;
@@ -20,24 +21,33 @@ double time,timePrev,elapsedTime;
 int max_control = 2000;
 int min_control = 1000;
 
-double SignalLeft=1300;
-double SignalRight=1300 ;
+double SignalLeft;
+double SignalRight;
 
 void setup() {
+  
   Serial.begin(9600);
   gyro.begin();
   gyro.calcGyroOffsets(true);
   rightProp.attach(9);
   leftProp.attach(10);
+  int beginrl;
   
-  rightProp.write(10);
-  leftProp.write(10);
-  delay(7000);
+  for (beginrl = 1000; beginrl != 2000; beginrl++)
+  {
+     rightProp.writeMicroseconds(beginrl);
+     leftProp.writeMicroseconds(beginrl);
+     
+  }
+  rightProp.writeMicroseconds(1000);
+  leftProp.writeMicroseconds(1000);
+  delay(5000);
+  
 }
 
-void pid(double &Input,double &Output,int Setpoint,double Kp,double Ki,double Kd )
-{ 
-     
+void pid(float &Input,double &Output,float Setpoint,double Kp,double Ki,double Kd )
+{    
+  
   timePrev = time; 
   time = millis(); 
   elapsedTime = (time - timePrev) / 1000;
@@ -46,34 +56,26 @@ void pid(double &Input,double &Output,int Setpoint,double Kp,double Ki,double Kd
   totalerror += error;
   deltaerror = error - lasterror;
   Output = Kp*error + (Ki*elapsedTime)*totalerror + (Kd/elapsedTime)*deltaerror;
-  if (Output >= 800) Output = 800;
-  SignalRight = currentSignalRight + Output;
-  SignalLeft = currentSignalLeft - Output;
+  if (Output >= 900) Output = 900;
+  SignalRight = 1300 + Output;
+  SignalLeft =  1300 - Output;
   if (SignalRight > max_control) SignalRight = max_control;
   if (SignalLeft > max_control) SignalLeft = max_control;
   if (SignalRight < min_control) SignalRight = min_control;
   if (SignalLeft < min_control) SignalLeft = min_control;
-
   
 }
 
-void motorPwm()
-{
-  if (SignalRight>currentSignalRight) currentSignalRight++;
-  if (SignalLeft>currentSignalLeft) currentSignalLeft++;
-  if (SignalLeft<currentSignalLeft) currentSignalLeft--;
-  if (SignalRight<currentSignalRight) currentSignalRight--;
-  
-    
-}
 void loop() {
+  
   gyro.update();
   Input = gyro.getAngleY();
   Setpoint = 0;
   pid(Input,Output,Setpoint,Kp,Ki,Kd);
-  motorPwm();
-  rightProp.writeMicroseconds(currentSignalRight);
-  leftProp.writeMicroseconds(currentSignalLeft);
-  delay(10);
+  Serial.print("rightSignal ");Serial.println(gyro.getAngleY());
+  Serial.print("currentrightSignal ");Serial.print(SignalLeft);
+
+  rightProp.write(SignalRight);
+  leftProp.write(SignalLeft);
 
 }
