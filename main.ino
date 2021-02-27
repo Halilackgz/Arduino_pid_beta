@@ -10,8 +10,7 @@ Servo leftProp;
 float Input;
 double Output;
 float Setpoint;
-double Kp=2,Ki=0.005,Kd=1.8;
-double currentSignalRight=1000,currentSignalLeft=1000;
+double Kp=3,Ki=0.005,Kd=1.8;
 double error;
 double lasterror;
 double totalerror;
@@ -31,14 +30,9 @@ void setup() {
   gyro.calcGyroOffsets(true);
   rightProp.attach(9);
   leftProp.attach(10);
-  int beginrl;
-  
-  for (beginrl = 1000; beginrl != 2000; beginrl++)
-  {
-     rightProp.writeMicroseconds(beginrl);
-     leftProp.writeMicroseconds(beginrl);
-     
-  }
+  pid_reset();
+  rightProp.writeMicroseconds(2000);
+  leftProp.writeMicroseconds(2000);
   rightProp.writeMicroseconds(1000);
   leftProp.writeMicroseconds(1000);
   delay(5000);
@@ -57,12 +51,27 @@ void pid(float &Input,double &Output,float Setpoint,double Kp,double Ki,double K
   deltaerror = error - lasterror;
   Output = Kp*error + (Ki*elapsedTime)*totalerror + (Kd/elapsedTime)*deltaerror;
   if (Output >= 900) Output = 900;
+
   SignalRight = 1300 + Output;
   SignalLeft =  1300 - Output;
+
+
   if (SignalRight > max_control) SignalRight = max_control;
   if (SignalLeft > max_control) SignalLeft = max_control;
   if (SignalRight < min_control) SignalRight = min_control;
   if (SignalLeft < min_control) SignalLeft = min_control;
+
+  
+}
+
+void pid_reset()
+{
+  error = 0;
+  lasterror = 0;
+  totalerror = 0;
+  deltaerror = 0;
+  Input = 0;  
+  Output = 0;
   
 }
 
@@ -73,7 +82,7 @@ void loop() {
   Setpoint = 0;
   pid(Input,Output,Setpoint,Kp,Ki,Kd);
 
-  rightProp.write(SignalRight);
-  leftProp.write(SignalLeft);
+  rightProp.writeMicroseconds(SignalRight);
+  leftProp.writeMicroseconds(SignalLeft);
 
 }
